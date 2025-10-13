@@ -1,1 +1,28 @@
-spring.application.name=RezerveoBooking
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/rezerveo
+    username: postgres
+    password: postgres
+  application:
+    name: rezerveo-booking
+
+application:
+  security:
+    jwt:
+      secret-key: ZXMKQBBFCLH0ZPAHWN4YGVEGER5NUKD7FGD2321SADA213123DASDGFGFDGBNHJHGE
+      access-token-expiration: 30m # 30 minutes
+      refresh-token-expiration: 1d  # 1 day
+    token:
+      account-activation-token-expiration: 15m # 15 minutes
+      password-reset-token-expiration: 15m # 15 minutes
+    encryption:
+      key: iw+u+4LQ3U+M7xqQbNi7Q449b68k2r4gOljpSTTguJg=
+
+logging:
+  level:
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
