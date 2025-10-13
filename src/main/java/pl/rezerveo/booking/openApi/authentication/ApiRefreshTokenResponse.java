@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Operation(
-        summary = "Odnów token JWT",
+        summary = "Odnowienie Access Tokenu JWT",
         description = "Zwraca nowy token JWT na podstawie refresh tokena",
         responses = {
                 @ApiResponse(

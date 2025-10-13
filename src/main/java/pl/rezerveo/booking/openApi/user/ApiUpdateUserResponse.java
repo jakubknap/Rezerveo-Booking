@@ -59,7 +59,7 @@ import java.lang.annotation.Target;
                 ),
                 @ApiResponse(
                         responseCode = "401",
-                        description = "Użytkownik nieuwierzetlniony",
+                        description = "Użytkownik nieuwierzytelniony",
                         content = @Content(
                                 schema = @Schema(implementation = BaseResponse.class),
                                 examples = @ExampleObject(
