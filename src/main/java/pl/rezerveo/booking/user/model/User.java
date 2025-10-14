@@ -14,8 +14,10 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import pl.rezerveo.booking.booking.model.Booking;
 import pl.rezerveo.booking.common.entity.auditable.DateAuditEntity;
 import pl.rezerveo.booking.security.encryption.EncryptedStringConverter;
+import pl.rezerveo.booking.slot.model.Slot;
 import pl.rezerveo.booking.token.model.Token;
 import pl.rezerveo.booking.user.enumerated.Role;
 import pl.rezerveo.booking.user.enumerated.UserStatus;
@@ -70,6 +72,12 @@ public class User extends DateAuditEntity implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = REMOVE, orphanRemoval = true)
     private List<Token> tokens = new ArrayList<>();
+
+    @OneToMany(mappedBy = "client", cascade = REMOVE, orphanRemoval = true)
+    private List<Booking> bookings = new ArrayList<>();
+
+    @OneToMany(mappedBy = "mechanic", cascade = REMOVE, orphanRemoval = true)
+    private List<Slot> slots = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

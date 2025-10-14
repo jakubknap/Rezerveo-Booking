@@ -60,7 +60,12 @@ public enum ResponseCode {
     E04001("Expired token", BAD_REQUEST),
     E04002("Revoked token", BAD_REQUEST),
     E04003("Invalid token", BAD_REQUEST),
-    E04004("Token used", BAD_REQUEST);
+    E04004("Token used", BAD_REQUEST),
+
+    // SLOT ERRORS
+    E05000("Selected time slot overlaps with an existing slot", CONFLICT),
+    E05001("Slot not found", NOT_FOUND),
+    E05002("Logged in user is not the owner of the slot", FORBIDDEN);
 
     private final String message;
     private final HttpStatus httpStatus;
