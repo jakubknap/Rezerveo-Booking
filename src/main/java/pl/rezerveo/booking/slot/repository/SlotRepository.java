@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import pl.rezerveo.booking.booking.dto.response.AvailableSlotsResponse;
 import pl.rezerveo.booking.slot.dto.response.MechanicSlotsResponse;
 import pl.rezerveo.booking.slot.model.Slot;
 import pl.rezerveo.booking.user.model.User;
@@ -51,4 +52,21 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
             WHERE s.uuid = :slotUuid
             """)
     Optional<Slot> findSlotWithMechanicAndBookingByUuid(UUID slotUuid);
+
+    @Query("""
+            SELECT new pl.rezerveo.booking.booking.dto.response.AvailableSlotsResponse(
+                    s.uuid,
+                    s.date,
+                    s.startTime,
+                    s.endTime,
+                    s.serviceType,
+                    m.firstName,
+                    m.lastName
+            )
+            FROM Slot s
+                     JOIN s.mechanic m
+            """)
+    Page<AvailableSlotsResponse> findAvailableSlots(Pageable pageable);
+
+    Optional<Slot> findByUuid(UUID uuid);
 }

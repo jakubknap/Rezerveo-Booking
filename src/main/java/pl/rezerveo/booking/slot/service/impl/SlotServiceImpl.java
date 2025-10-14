@@ -76,7 +76,7 @@ public class SlotServiceImpl implements SlotService {
             return new BaseResponse(E05003);
         }
 
-        if (SlotStatus.RESERVED == slot.getStatus()) {
+        if (SlotStatus.BOOKED == slot.getStatus()) {
             Booking booking = slot.getBooking();
             booking.setStatus(BookingStatus.CANCELED);
             bookingRepository.save(booking);
