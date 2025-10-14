@@ -65,7 +65,8 @@ public enum ResponseCode {
     // SLOT ERRORS
     E05000("Selected time slot overlaps with an existing slot", CONFLICT),
     E05001("Slot not found", NOT_FOUND),
-    E05002("Logged in user is not the owner of the slot", FORBIDDEN);
+    E05002("Logged in user is not the owner of the slot", FORBIDDEN),
+    E05003("Slot had already been canceled", UNPROCESSABLE_ENTITY);
 
     private final String message;
     private final HttpStatus httpStatus;

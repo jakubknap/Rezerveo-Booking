@@ -5,11 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pl.rezerveo.booking.booking.enumerated.BookingStatus;
+import pl.rezerveo.booking.booking.model.Booking;
+import pl.rezerveo.booking.booking.repository.BookingRepository;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.ServiceException;
 import pl.rezerveo.booking.slot.dto.request.CreateSlotRequest;
 import pl.rezerveo.booking.slot.dto.response.MechanicSlotsResponse;
+import pl.rezerveo.booking.slot.enumerate.SlotStatus;
 import pl.rezerveo.booking.slot.model.Slot;
 import pl.rezerveo.booking.slot.repository.SlotRepository;
 import pl.rezerveo.booking.slot.service.SlotService;
@@ -21,12 +26,12 @@ import static java.util.UUID.randomUUID;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05000;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05001;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05002;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05003;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00001;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00003;
 import static pl.rezerveo.booking.security.util.SecurityUtils.getLoggedUser;
 import static pl.rezerveo.booking.security.util.SecurityUtils.getLoggedUserUUID;
 import static pl.rezerveo.booking.slot.enumerate.SlotStatus.AVAILABLE;
-import static pl.rezerveo.booking.slot.enumerate.SlotStatus.CANCELLED;
 
 @Slf4j
 @Service
@@ -34,6 +39,7 @@ import static pl.rezerveo.booking.slot.enumerate.SlotStatus.CANCELLED;
 public class SlotServiceImpl implements SlotService {
 
     private final SlotRepository slotRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public BaseResponse createSlot(CreateSlotRequest request) {
@@ -58,16 +64,27 @@ public class SlotServiceImpl implements SlotService {
     }
 
     @Override
+    @Transactional
     public BaseResponse cancelSlot(UUID slotUuid) {
-        Slot slot = getSlotOrElseThrow(slotUuid);
+        Slot slot = getSlotWithUserAndBookingOrElseThrow(slotUuid);
 
         validateSlotMechanic(getLoggedUserUUID(),
                              slot.getMechanic().getUuid(),
                              slot.getUuid());
 
-        slot.setStatus(CANCELLED);
-        //TODO obsługa usuunięcia rezerwacji jak jest
-        //TOOD wysyłka powiadomienia
+        if (SlotStatus.CANCELED == slot.getStatus()) {
+            return new BaseResponse(E05003);
+        }
+
+        if (SlotStatus.RESERVED == slot.getStatus()) {
+            Booking booking = slot.getBooking();
+            booking.setStatus(BookingStatus.CANCELED);
+            bookingRepository.save(booking);
+            //TOOD wysyłka powiadomienia
+        }
+
+        slot.setStatus(SlotStatus.CANCELED);
+        slotRepository.save(slot);
 
         return new BaseResponse(S00001);
     }
@@ -91,8 +108,8 @@ public class SlotServiceImpl implements SlotService {
                    .build();
     }
 
-    private Slot getSlotOrElseThrow(UUID slotUuid) {
-        return slotRepository.findByUuid(slotUuid)
+    private Slot getSlotWithUserAndBookingOrElseThrow(UUID slotUuid) {
+        return slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid)
                              .orElseThrow(() -> {
                                  log.error("Slot with UUID: [{}] not found", slotUuid);
                                  return new ServiceException(E05001);

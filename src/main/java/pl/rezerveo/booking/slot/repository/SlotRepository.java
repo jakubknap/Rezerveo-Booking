@@ -43,5 +43,12 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
             """)
     Page<MechanicSlotsResponse> getMechanicSlots(Pageable pageable, UUID mechanicUuid);
 
-    Optional<Slot> findByUuid(UUID uuid);
+    @Query("""
+            SELECT s
+            FROM Slot s
+                     JOIN FETCH s.mechanic
+                     JOIN FETCH s.booking
+            WHERE s.uuid = :slotUuid
+            """)
+    Optional<Slot> findSlotWithMechanicAndBookingByUuid(UUID slotUuid);
 }
