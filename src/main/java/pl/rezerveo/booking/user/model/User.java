@@ -54,6 +54,9 @@ public class User extends DateAuditEntity implements UserDetails {
     @Convert(converter = EncryptedStringConverter.class)
     private String email;
 
+    @Convert(converter = EncryptedStringConverter.class)
+    private String phoneNumber;
+
     @Column(nullable = false)
     private String password;
 

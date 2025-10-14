@@ -22,6 +22,7 @@ public class UserMapper {
                    .firstName(request.firstName())
                    .lastName(request.lastName())
                    .email(request.email())
+                   .phoneNumber(request.phoneNumber())
                    .password(passwordEncoder.encode(request.password()))
                    .status(REGISTERED)
                    .role(request.role())
@@ -33,6 +34,7 @@ public class UserMapper {
                                        user.getFirstName(),
                                        user.getLastName(),
                                        user.getEmail(),
+                                       user.getPhoneNumber(),
                                        user.getRole());
     }
 }

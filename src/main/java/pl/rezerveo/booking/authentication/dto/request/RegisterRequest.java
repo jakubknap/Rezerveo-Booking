@@ -18,10 +18,11 @@ public record RegisterRequest(
         @Email
         String email,
 
+        String phoneNumber,
+
         @Password
         String password,
 
         @NotNull
         Role role
-) {
-}
+) {}

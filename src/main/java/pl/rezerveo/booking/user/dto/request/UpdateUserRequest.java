@@ -13,5 +13,7 @@ public record UpdateUserRequest(
         String lastName,
 
         @Email
-        String email
+        String email,
+
+        String phoneNumber
 ) {}
