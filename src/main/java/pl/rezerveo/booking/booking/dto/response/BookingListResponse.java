@@ -12,7 +12,7 @@ public record BookingListResponse(
         LocalDate date,
         LocalTime startTime,
         LocalTime endTime,
-        ServiceType serviceType,
+        String serviceType,
         String mechanicName,
         BookingStatus status
 ) {
@@ -25,6 +25,6 @@ public record BookingListResponse(
                                String mechanicFirstName,
                                String mechanicLastName,
                                BookingStatus status) {
-        this(uuid, date, startTime, endTime, serviceType, (mechanicFirstName + " " + mechanicLastName), status);
+        this(uuid, date, startTime, endTime, serviceType.getDescription(), (mechanicFirstName + " " + mechanicLastName), status);
     }
 }

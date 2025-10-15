@@ -12,6 +12,15 @@ public record MechanicSlotsResponse(
         LocalDate date,
         LocalTime startTime,
         LocalTime endTime,
-        ServiceType serviceType,
+        String serviceType,
         SlotStatus status
-) {}
+) {
+    public MechanicSlotsResponse(UUID uuid,
+                                 LocalDate date,
+                                 LocalTime startTime,
+                                 LocalTime endTime,
+                                 ServiceType serviceType,
+                                 SlotStatus status) {
+        this(uuid, date, startTime, endTime, serviceType.getDescription(), status);
+    }
+}

@@ -11,7 +11,7 @@ public record AvailableSlotsResponse(
         LocalDate date,
         LocalTime startTime,
         LocalTime endTime,
-        ServiceType serviceType,
+        String serviceType,
         String mechanicName
 ) {
     public AvailableSlotsResponse(UUID uuid,
@@ -21,6 +21,6 @@ public record AvailableSlotsResponse(
                                   ServiceType serviceType,
                                   String mechanicFirstName,
                                   String mechanicLastName) {
-        this(uuid, date, startTime, endTime, serviceType, (mechanicFirstName + " " + mechanicLastName));
+        this(uuid, date, startTime, endTime, serviceType.getDescription(), (mechanicFirstName + " " + mechanicLastName));
     }
 }
