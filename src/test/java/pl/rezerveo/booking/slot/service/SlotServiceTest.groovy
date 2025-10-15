@@ -1,4 +1,4 @@
-package pl.rezerveo.booking.slot.service.impl
+package pl.rezerveo.booking.slot.service
 
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -9,7 +9,7 @@ import pl.rezerveo.booking.exception.exception.ServiceException
 import pl.rezerveo.booking.slot.dto.request.CreateSlotRequest
 import pl.rezerveo.booking.slot.model.Slot
 import pl.rezerveo.booking.slot.repository.SlotRepository
-import pl.rezerveo.booking.slot.service.SlotService
+import pl.rezerveo.booking.slot.service.impl.SlotServiceImpl
 import pl.rezerveo.booking.user.model.User
 import spock.lang.Specification
 
@@ -29,7 +29,7 @@ import static pl.rezerveo.booking.slot.enumerate.SlotStatus.AVAILABLE
 import static pl.rezerveo.booking.slot.enumerate.SlotStatus.BOOKED
 import static pl.rezerveo.booking.slot.enumerate.SlotStatus.CANCELED
 
-class SlotServiceImplTest extends Specification {
+class SlotServiceTest extends Specification {
 
     SlotRepository slotRepository = Mock(SlotRepository)
     BookingRepository bookingRepository = Mock(BookingRepository)

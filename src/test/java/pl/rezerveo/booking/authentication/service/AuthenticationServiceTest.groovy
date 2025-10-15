@@ -49,7 +49,7 @@ class AuthenticationServiceTest extends Specification {
 
     def "register should throw exception if user exists"() {
         given:
-        def request = new RegisterRequest("firstName", "lastName", "test@example.com", "pass", CLIENT)
+        def request = new RegisterRequest("firstName", "lastName", "test@example.com", "123456789", "pass", CLIENT)
         encryptionService.encrypt(_ as String) >> "asd2312"
         userRepository.existsByEmail(_ as String) >> true
 
@@ -63,7 +63,7 @@ class AuthenticationServiceTest extends Specification {
 
     def "register should save new user"() {
         given:
-        def request = new RegisterRequest("firstName", "lastName", "test@example.com", "pass", CLIENT)
+        def request = new RegisterRequest("firstName", "lastName", "test@example.com", "123456789", "pass", CLIENT)
         def user = new User(uuid: randomUUID(), email: request.email())
         userRepository.existsByEmail(_ as String) >> false
         userMapper.mapToUserEntity(request) >> user

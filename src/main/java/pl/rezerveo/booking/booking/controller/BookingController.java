@@ -16,6 +16,10 @@ import pl.rezerveo.booking.booking.dto.response.BookingListResponse;
 import pl.rezerveo.booking.booking.service.BookingService;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
+import pl.rezerveo.booking.openApi.booking.ApiBookSlotResponse;
+import pl.rezerveo.booking.openApi.booking.ApiCancelBookingResponse;
+import pl.rezerveo.booking.openApi.booking.ApiGetAvailableSlotsResponse;
+import pl.rezerveo.booking.openApi.booking.ApiGetBookingListResponse;
 
 import java.util.UUID;
 
@@ -32,21 +36,25 @@ public class BookingController {
     private final BookingService bookingService;
 
     @GetMapping("/available")
+    @ApiGetAvailableSlotsResponse
     public PageResponse<AvailableSlotsResponse> getAvailableSlots(@PageableDefault(sort = "createdDate", direction = DESC) Pageable pageable) {
         return bookingService.getAvailableSlots(pageable);
     }
 
     @PostMapping("/{slotUuid}")
+    @ApiBookSlotResponse
     public BaseResponse bookSlot(@PathVariable UUID slotUuid) {
         return bookingService.bookSlot(slotUuid);
     }
 
     @GetMapping
+    @ApiGetBookingListResponse
     public PageResponse<BookingListResponse> getBookingList(@PageableDefault(sort = "createdDate", direction = DESC) Pageable pageable) {
         return bookingService.getBookingList(pageable);
     }
 
     @DeleteMapping("/{bookingUuid}")
+    @ApiCancelBookingResponse
     public BaseResponse cancelBooking(@PathVariable UUID bookingUuid) {
         return bookingService.cancelBooking(bookingUuid);
     }

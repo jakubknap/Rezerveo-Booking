@@ -44,12 +44,18 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public PageResponse<AvailableSlotsResponse> getAvailableSlots(Pageable pageable) {
-        return PageResponse.of(slotRepository.findAvailableSlots(pageable));
+        log.info("Fetching available slots, pageable: {}", pageable);
+
+        Page<AvailableSlotsResponse> availableSlots = slotRepository.findAvailableSlots(pageable);
+
+        log.info("Found {} available slots", availableSlots.getTotalElements());
+        return PageResponse.of(availableSlots);
     }
 
     @Override
     @Transactional
     public BaseResponse bookSlot(UUID slotUuid) {
+        log.info("Attempting to book slot with UUID: {}", slotUuid);
         Slot slot = getSlotWithUuidOrElseThrow(slotUuid);
 
         validateSlot(slot);
@@ -62,18 +68,26 @@ public class BookingServiceImpl implements BookingService {
 
         //TODO notyfikacja
 
+        log.info("Slot booked successfully, slot UUID: {}, booking UUID: {}", slot.getUuid(), booking.getUuid());
         return new BaseResponse(S00000);
     }
 
     @Override
     public PageResponse<BookingListResponse> getBookingList(Pageable pageable) {
-        Page<BookingListResponse> bookingList = bookingRepository.findAllByClientUuid(pageable, getLoggedUserUUID());
+        UUID loggedUserUuid = getLoggedUserUUID();
+        log.info("Fetching booking list for user UUID: {}, pageable: {}", loggedUserUuid, pageable);
+
+        Page<BookingListResponse> bookingList = bookingRepository.findAllByClientUuid(pageable, loggedUserUuid);
+
+        log.info("Found {} bookings for user UUID: {}", bookingList.getTotalElements(), loggedUserUuid);
         return PageResponse.of(bookingList);
     }
 
     @Override
     @Transactional
     public BaseResponse cancelBooking(UUID bookingUuid) {
+        log.info("Attempting to cancel booking with UUID: {}", bookingUuid);
+
         Booking booking = getBookingWithClientAndSlotOrElseThrow(bookingUuid);
 
         validateBooking(booking);
@@ -90,9 +104,14 @@ public class BookingServiceImpl implements BookingService {
         if (!stillBooked) {
             slot.setStatus(SlotStatus.AVAILABLE);
             slotRepository.save(slot);
+            log.info("Slot set to AVAILABLE as no other confirmed bookings exist, slot UUID: {}", slot.getUuid());
+        }
+        else {
+            log.info("Slot remains BOOKED as there are other confirmed bookings, slot UUID: {}", slot.getUuid());
         }
 
         //TODO notyfikacja
+        log.info("Booking canceled, booking UUID: {}", booking.getUuid());
         return new BaseResponse(S00001);
     }
 
@@ -116,18 +135,21 @@ public class BookingServiceImpl implements BookingService {
                                           .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
 
         if (activeBookingExists) {
+            log.error("Cannot book slot UUID: {} because it has an active booking", slot.getUuid());
             throw new ServiceException(E05004);
         }
     }
 
     private void validateSlotStatus(Slot slot) {
         if (SlotStatus.AVAILABLE != slot.getStatus()) {
+            log.error("Cannot book slot UUID: {} because status is {}", slot.getUuid(), slot.getStatus());
             throw new ServiceException(E05004);
         }
     }
 
     private void validateSlotOwner(Slot slot) {
         if (slot.getMechanic().getUuid().equals(getLoggedUserUUID())) {
+            log.error("Logged-in user is the mechanic, cannot book own slot UUID: {}", slot.getUuid());
             throw new ServiceException(E06004);
         }
     }
@@ -163,6 +185,7 @@ public class BookingServiceImpl implements BookingService {
 
     private void validateBookingStatus(Booking booking) {
         if (BookingStatus.CONFIRMED != booking.getStatus()) {
+            log.error("Cannot cancel booking UUID: {} because status is {}", booking.getUuid(), booking.getStatus());
             throw new ServiceException(E06001);
         }
     }

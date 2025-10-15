@@ -76,7 +76,7 @@ class UserServiceTest extends Specification {
 
     def "updateUser should update user when data valid"() {
         given:
-        def request = new UpdateUserRequest("newFirstName", "NewLastName", "new@example.com")
+        def request = new UpdateUserRequest("newFirstName", "NewLastName", "new@example.com", "123456789")
 
         def encodedEmail = "asdasd23"
         encryptionService.encrypt(_ as String) >> encodedEmail
@@ -93,7 +93,7 @@ class UserServiceTest extends Specification {
 
     def "updateUser should throw when email already taken"() {
         given:
-        def request = new UpdateUserRequest("newFirstName", "NewLastName", "new@example.com")
+        def request = new UpdateUserRequest("newFirstName", "NewLastName", "new@example.com", "123456789")
 
         def encodedEmail = "asdasd23"
         encryptionService.encrypt(_ as String) >> encodedEmail
