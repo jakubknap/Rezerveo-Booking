@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rezerveo.booking.booking.enumerated.BookingStatus;
-import pl.rezerveo.booking.booking.model.Booking;
 import pl.rezerveo.booking.booking.repository.BookingRepository;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
@@ -73,14 +72,18 @@ public class SlotServiceImpl implements SlotService {
                              slot.getUuid());
 
         if (SlotStatus.CANCELED == slot.getStatus()) {
-            return new BaseResponse(E05003);
+            throw new ServiceException(E05003);
         }
 
         if (SlotStatus.BOOKED == slot.getStatus()) {
-            Booking booking = slot.getBooking();
-            booking.setStatus(BookingStatus.CANCELED);
-            bookingRepository.save(booking);
-            //TOOD wysyłka powiadomienia
+            slot.getBookings()
+                .stream()
+                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                .forEach(b -> {
+                    b.setStatus(BookingStatus.CANCELED);
+                    bookingRepository.save(b);
+                    // TODO: powiadomienie do klienta
+                });
         }
 
         slot.setStatus(SlotStatus.CANCELED);

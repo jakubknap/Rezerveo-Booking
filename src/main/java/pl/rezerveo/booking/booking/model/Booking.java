@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,8 +35,8 @@ public class Booking extends FullAuditEntity {
     @Column(nullable = false)
     private BookingStatus status;
 
-    @OneToOne(fetch = LAZY)
-    @JoinColumn(name = "slot_id", nullable = false, unique = true)
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name = "slot_id", nullable = false)
     private Slot slot;
 
     @ManyToOne(fetch = LAZY)

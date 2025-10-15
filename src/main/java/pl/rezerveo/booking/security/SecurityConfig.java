@@ -21,15 +21,11 @@ public class SecurityConfig {
 
     private static final String AUTH_ENDPOINT = "/api/v1/auth/**";
 
-    private static final String[] WHITE_LIST_URL = {
-            AUTH_ENDPOINT,
-            "/v3/api-docs/**",
-            "/swagger-ui/**",
-            "/swagger-ui.html"
-    };
+    private static final String[] WHITE_LIST_URL = {AUTH_ENDPOINT, "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"};
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final AuthenticationProvider authenticationProvider;
     private final LogoutService logoutService;
 
@@ -37,12 +33,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authRequests -> authRequests.requestMatchers(WHITE_LIST_URL).permitAll()
-                                                               .requestMatchers("/slots/**").hasRole(MECHANIC.name())
+                                                               .requestMatchers("/api/v1/slots/**").hasRole(MECHANIC.name())
                                                                .anyRequest().authenticated())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                                       .accessDeniedHandler(jwtAccessDeniedHandler))
             .logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
                                     .addLogoutHandler(logoutService)
                                     .invalidateHttpSession(true)

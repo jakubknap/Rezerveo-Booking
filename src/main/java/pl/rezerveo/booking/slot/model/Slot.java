@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +19,8 @@ import pl.rezerveo.booking.user.model.User;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static jakarta.persistence.CascadeType.ALL;
@@ -57,6 +59,6 @@ public class Slot extends FullAuditEntity {
     @JoinColumn(name = "mechanic_id", nullable = false)
     private User mechanic;
 
-    @OneToOne(mappedBy = "slot", cascade = ALL)
-    private Booking booking;
+    @OneToMany(mappedBy = "slot", cascade = ALL, orphanRemoval = true)
+    private List<Booking> bookings = new ArrayList<>();
 }

@@ -26,14 +26,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             FROM Booking b
                      JOIN b.slot s
                      JOIN s.mechanic m
+            WHERE b.client.uuid = :clientUuid
             """)
     Page<BookingListResponse> findAllByClientUuid(Pageable pageable, UUID clientUuid);
 
     @Query("""
             SELECT b
             FROM Booking b
+                     JOIN FETCH b.client
                      JOIN FETCH b.slot
             WHERE b.uuid = :bookingUuid
             """)
-    Optional<Booking> findBookingWithSlotByUuid(UUID bookingUuid);
+    Optional<Booking> findBookingWithClientAndSlotByUuid(UUID bookingUuid);
 }

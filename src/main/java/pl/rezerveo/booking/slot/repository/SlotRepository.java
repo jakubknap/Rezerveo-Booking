@@ -27,6 +27,7 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
                     OR (s.startTime BETWEEN :startTime AND :endTime)
                     OR (s.endTime BETWEEN :startTime AND :endTime)
                 )
+              AND s.status != 'CANCELED'
             """)
     boolean existsByMechanicAndDateAndTimeOverlap(User mechanic, LocalDate date, LocalTime startTime, LocalTime endTime);
 
@@ -48,7 +49,7 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
             SELECT s
             FROM Slot s
                      JOIN FETCH s.mechanic
-                     JOIN FETCH s.booking
+                     LEFT JOIN FETCH s.bookings
             WHERE s.uuid = :slotUuid
             """)
     Optional<Slot> findSlotWithMechanicAndBookingByUuid(UUID slotUuid);
@@ -65,8 +66,7 @@ public interface SlotRepository extends JpaRepository<Slot, Long> {
             )
             FROM Slot s
                      JOIN s.mechanic m
+            WHERE s.status = 'AVAILABLE'
             """)
     Page<AvailableSlotsResponse> findAvailableSlots(Pageable pageable);
-
-    Optional<Slot> findByUuid(UUID uuid);
 }

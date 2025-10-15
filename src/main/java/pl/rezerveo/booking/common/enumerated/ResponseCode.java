@@ -71,7 +71,9 @@ public enum ResponseCode {
 
     // BOOKING ERRORS
     E06000("Booking not found", NOT_FOUND),
-    E06001("Booking status does not allow cancellation", UNPROCESSABLE_ENTITY);
+    E06001("Booking status does not allow cancellation", UNPROCESSABLE_ENTITY),
+    E06003("Logged in user is not the owner of the booking", FORBIDDEN),
+    E06004("Cannot book your own slot", UNPROCESSABLE_ENTITY);
 
     private final String message;
     private final HttpStatus httpStatus;

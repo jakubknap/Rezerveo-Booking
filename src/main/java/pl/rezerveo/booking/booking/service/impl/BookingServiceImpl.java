@@ -15,6 +15,7 @@ import pl.rezerveo.booking.booking.service.BookingService;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.ServiceException;
+import pl.rezerveo.booking.security.util.SecurityUtils;
 import pl.rezerveo.booking.slot.enumerate.SlotStatus;
 import pl.rezerveo.booking.slot.model.Slot;
 import pl.rezerveo.booking.slot.repository.SlotRepository;
@@ -26,6 +27,8 @@ import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05001;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05004;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06000;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06001;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06003;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06004;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00000;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00001;
 import static pl.rezerveo.booking.security.util.SecurityUtils.getLoggedUser;
@@ -47,10 +50,24 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BaseResponse bookSlot(UUID slotUuid) {
-        Slot slot = getSlotOrElseThrow(slotUuid);
+        Slot slot = getSlotWithUuidOrElseThrow(slotUuid);
+
+        boolean activeBookingExists = slot.getBookings()
+                                          .stream()
+                                          .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
+
+        if (activeBookingExists) {
+            throw new ServiceException(E05004);
+        }
 
         if (SlotStatus.AVAILABLE != slot.getStatus()) {
             throw new ServiceException(E05004);
+        }
+
+        if (slot.getMechanic()
+                .getUuid()
+                .equals(getLoggedUserUUID())) {
+            throw new ServiceException(E06004);
         }
 
         Booking booking = Booking.builder()
@@ -78,7 +95,11 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BaseResponse cancelBooking(UUID bookingUuid) {
-        Booking booking = getBookingWithSlotOrElseThrow(bookingUuid);
+        Booking booking = getBookingWithClientAndSlotOrElseThrow(bookingUuid);
+
+        validateBookingOwner(SecurityUtils.getLoggedUserUUID(),
+                             booking.getClient().getUuid(),
+                             booking.getUuid());
 
         if (BookingStatus.CONFIRMED != booking.getStatus()) {
             throw new ServiceException(E06001);
@@ -88,7 +109,12 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
 
         Slot slot = booking.getSlot();
-        if (SlotStatus.BOOKED == slot.getStatus()) {
+
+        boolean stillBooked = slot.getBookings()
+                                  .stream()
+                                  .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
+
+        if (!stillBooked) {
             slot.setStatus(SlotStatus.AVAILABLE);
             slotRepository.save(slot);
         }
@@ -97,19 +123,26 @@ public class BookingServiceImpl implements BookingService {
         return new BaseResponse(S00001);
     }
 
-    private Slot getSlotOrElseThrow(UUID slotUuid) {
-        return slotRepository.findByUuid(slotUuid)
+    private Slot getSlotWithUuidOrElseThrow(UUID slotUuid) {
+        return slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid)
                              .orElseThrow(() -> {
                                  log.error("Slot with UUID: [{}] not found", slotUuid);
                                  return new ServiceException(E05001);
                              });
     }
 
-    private Booking getBookingWithSlotOrElseThrow(UUID bookingUuid) {
-        return bookingRepository.findBookingWithSlotByUuid(bookingUuid)
+    private Booking getBookingWithClientAndSlotOrElseThrow(UUID bookingUuid) {
+        return bookingRepository.findBookingWithClientAndSlotByUuid(bookingUuid)
                                 .orElseThrow(() -> {
                                     log.error("Booking with UUID: [{}] not found", bookingUuid);
                                     return new ServiceException(E06000);
                                 });
+    }
+
+    private void validateBookingOwner(UUID loggedUserUuid, UUID bookingOwnerUuid, UUID bookingUuid) {
+        if (!loggedUserUuid.equals(bookingOwnerUuid)) {
+            log.error("Logged in user is not the owner of the booking. Booking UUID: [{}], Logged user UUID: [{}], Booking owner UUID: [{}]", bookingUuid, loggedUserUuid, bookingOwnerUuid);
+            throw new ServiceException(E06003);
+        }
     }
 }
