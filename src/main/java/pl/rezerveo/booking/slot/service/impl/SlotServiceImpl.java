@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.rezerveo.booking.booking.enumerated.BookingStatus;
+import pl.rezerveo.booking.booking.model.Booking;
 import pl.rezerveo.booking.booking.repository.BookingRepository;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
@@ -19,6 +20,7 @@ import pl.rezerveo.booking.slot.repository.SlotRepository;
 import pl.rezerveo.booking.slot.service.SlotService;
 import pl.rezerveo.booking.user.model.User;
 
+import java.util.List;
 import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
@@ -42,6 +44,7 @@ public class SlotServiceImpl implements SlotService {
 
     @Override
     public BaseResponse createSlot(CreateSlotRequest request) {
+        log.info("Starting slot creation for request: {}", request);
         User loggedUser = getLoggedUser();
 
         validateOverlapping(request, loggedUser);
@@ -50,45 +53,53 @@ public class SlotServiceImpl implements SlotService {
 
         slotRepository.save(slot);
 
+        log.info("Slot successfully created with UUID: {}", slot.getUuid());
         return new BaseResponse(S00003);
     }
 
     @Override
     public PageResponse<MechanicSlotsResponse> getMechanicSlots(Pageable pageable) {
+        log.info("Fetching slots for mechanic, pageable: {}", pageable);
         UUID userUuid = getLoggedUserUUID();
 
         Page<MechanicSlotsResponse> slots = slotRepository.getMechanicSlots(pageable, userUuid);
 
+        log.info("Found {} slots for mechanic UUID: {}", slots.getTotalElements(), userUuid);
         return PageResponse.of(slots);
     }
 
     @Override
     @Transactional
     public BaseResponse cancelSlot(UUID slotUuid) {
+        log.info("Request to cancel slot UUID: {}", slotUuid);
         Slot slot = getSlotWithUserAndBookingOrElseThrow(slotUuid);
 
         validate(slot);
 
         if (SlotStatus.BOOKED == slot.getStatus()) {
-            slot.getBookings()
-                .stream()
-                .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
-                .forEach(b -> {
-                    b.setStatus(BookingStatus.CANCELED);
-                    bookingRepository.save(b);
-                    // TODO: powiadomienie do klienta
-                });
+            log.info("Canceling confirmed bookings for slot UUID: {}", slotUuid);
+            List<Booking> bookings = slot.getBookings();
+            bookings.stream()
+                    .filter(b -> b.getStatus() == BookingStatus.CONFIRMED)
+                    .forEach(b -> {
+                        log.info("Canceling booking UUID: {}", b.getUuid());
+                        b.setStatus(BookingStatus.CANCELED);
+                        // TODO: powiadomienie do klienta
+                    });
+            bookingRepository.saveAll(bookings);
         }
 
         slot.setStatus(SlotStatus.CANCELED);
         slotRepository.save(slot);
 
+        log.info("Slot UUID: {} successfully canceled", slotUuid);
         return new BaseResponse(S00001);
     }
 
     private void validateOverlapping(CreateSlotRequest request, User loggedUser) {
         boolean overlapping = slotRepository.existsByMechanicAndDateAndTimeOverlap(loggedUser, request.date(), request.startTime(), request.endTime());
         if (overlapping) {
+            log.error("Overlapping slot detected for user: {}", loggedUser.getUuid());
             throw new ServiceException(E05000);
         }
     }
@@ -127,6 +138,7 @@ public class SlotServiceImpl implements SlotService {
 
     private void validateSlotStatus(Slot slot) {
         if (SlotStatus.CANCELED == slot.getStatus()) {
+            log.warn("Attempt to cancel already canceled slot UUID: {}", slot.getUuid());
             throw new ServiceException(E05003);
         }
     }

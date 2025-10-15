@@ -12,11 +12,9 @@ public record CreateSlotRequest(@NotNull
                                 LocalDate date,
 
                                 @NotNull
-                                @FutureOrPresent
                                 LocalTime startTime,
 
                                 @NotNull
-                                @FutureOrPresent
                                 LocalTime endTime,
 
                                 @NotNull

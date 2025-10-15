@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
+import pl.rezerveo.booking.openApi.slot.ApiCancelSlotResponse;
+import pl.rezerveo.booking.openApi.slot.ApiCreateSlotResponse;
+import pl.rezerveo.booking.openApi.slot.ApiGetMechanicSlotsResponse;
 import pl.rezerveo.booking.slot.dto.request.CreateSlotRequest;
 import pl.rezerveo.booking.slot.dto.response.MechanicSlotsResponse;
 import pl.rezerveo.booking.slot.service.SlotService;
@@ -28,22 +31,25 @@ import static pl.rezerveo.booking.common.constant.Urls.SLOTS_URL;
 @RestController
 @RequestMapping(SLOTS_URL)
 @RequiredArgsConstructor
-@Tag(name = "Zarządzanie wizytami przez mechnika", description = "Operacje związane z wizytyami")
+@Tag(name = "Zarządzanie slotami przez mechnika", description = "Operacje związane ze slotami")
 public class SlotController {
 
     private final SlotService slotService;
 
     @PostMapping
+    @ApiCreateSlotResponse
     public BaseResponse createSlot(@RequestBody @Valid CreateSlotRequest request) {
         return slotService.createSlot(request);
     }
 
     @GetMapping
+    @ApiGetMechanicSlotsResponse
     public PageResponse<MechanicSlotsResponse> getMechanicSlots(@PageableDefault(sort = "createdDate", direction = DESC) Pageable pageable) {
         return slotService.getMechanicSlots(pageable);
     }
 
     @DeleteMapping("/{slotUuid}")
+    @ApiCancelSlotResponse
     public BaseResponse cancelSlot(@PathVariable UUID slotUuid) {
         return slotService.cancelSlot(slotUuid);
     }
