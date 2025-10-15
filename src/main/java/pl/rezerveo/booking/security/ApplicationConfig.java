@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -25,6 +26,7 @@ import static pl.rezerveo.booking.util.MaskingUtil.maskEmail;
 @Configuration
 @EnableAsync
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
+@EnableScheduling
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
@@ -33,10 +35,10 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> {
-                    log.error("User with e-mail: [{}] not found", maskEmail(username));
-                    return new ServiceException(E03001);
-                });
+                                         .orElseThrow(() -> {
+                                             log.error("User with e-mail: [{}] not found", maskEmail(username));
+                                             return new ServiceException(E03001);
+                                         });
     }
 
     @Bean
