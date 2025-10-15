@@ -67,13 +67,7 @@ public class SlotServiceImpl implements SlotService {
     public BaseResponse cancelSlot(UUID slotUuid) {
         Slot slot = getSlotWithUserAndBookingOrElseThrow(slotUuid);
 
-        validateSlotMechanic(getLoggedUserUUID(),
-                             slot.getMechanic().getUuid(),
-                             slot.getUuid());
-
-        if (SlotStatus.CANCELED == slot.getStatus()) {
-            throw new ServiceException(E05003);
-        }
+        validate(slot);
 
         if (SlotStatus.BOOKED == slot.getStatus()) {
             slot.getBookings()
@@ -119,10 +113,21 @@ public class SlotServiceImpl implements SlotService {
                              });
     }
 
+    private void validate(Slot slot) {
+        validateSlotMechanic(getLoggedUserUUID(), slot.getMechanic().getUuid(), slot.getUuid());
+        validateSlotStatus(slot);
+    }
+
     private void validateSlotMechanic(UUID loggedUserUuid, UUID slotMechanicUuid, UUID slotUuid) {
         if (!loggedUserUuid.equals(slotMechanicUuid)) {
             log.error("Logged in user is not the owner of the slot. Slot UUID: [{}], Logged user UUID: [{}], Slot owner UUID: [{}]", slotUuid, loggedUserUuid, slotMechanicUuid);
             throw new ServiceException(E05002);
+        }
+    }
+
+    private void validateSlotStatus(Slot slot) {
+        if (SlotStatus.CANCELED == slot.getStatus()) {
+            throw new ServiceException(E05003);
         }
     }
 }

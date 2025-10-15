@@ -52,30 +52,9 @@ public class BookingServiceImpl implements BookingService {
     public BaseResponse bookSlot(UUID slotUuid) {
         Slot slot = getSlotWithUuidOrElseThrow(slotUuid);
 
-        boolean activeBookingExists = slot.getBookings()
-                                          .stream()
-                                          .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
+        validateSlot(slot);
 
-        if (activeBookingExists) {
-            throw new ServiceException(E05004);
-        }
-
-        if (SlotStatus.AVAILABLE != slot.getStatus()) {
-            throw new ServiceException(E05004);
-        }
-
-        if (slot.getMechanic()
-                .getUuid()
-                .equals(getLoggedUserUUID())) {
-            throw new ServiceException(E06004);
-        }
-
-        Booking booking = Booking.builder()
-                                 .uuid(randomUUID())
-                                 .status(BookingStatus.CONFIRMED)
-                                 .slot(slot)
-                                 .client(getLoggedUser())
-                                 .build();
+        Booking booking = buildBooking(slot);
 
         slot.setStatus(SlotStatus.BOOKED);
         bookingRepository.save(booking);
@@ -97,13 +76,7 @@ public class BookingServiceImpl implements BookingService {
     public BaseResponse cancelBooking(UUID bookingUuid) {
         Booking booking = getBookingWithClientAndSlotOrElseThrow(bookingUuid);
 
-        validateBookingOwner(SecurityUtils.getLoggedUserUUID(),
-                             booking.getClient().getUuid(),
-                             booking.getUuid());
-
-        if (BookingStatus.CONFIRMED != booking.getStatus()) {
-            throw new ServiceException(E06001);
-        }
+        validateBooking(booking);
 
         booking.setStatus(BookingStatus.CANCELED);
         bookingRepository.save(booking);
@@ -131,6 +104,43 @@ public class BookingServiceImpl implements BookingService {
                              });
     }
 
+    private void validateSlot(Slot slot) {
+        validateActiveBooking(slot);
+        validateSlotStatus(slot);
+        validateSlotOwner(slot);
+    }
+
+    private void validateActiveBooking(Slot slot) {
+        boolean activeBookingExists = slot.getBookings()
+                                          .stream()
+                                          .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
+
+        if (activeBookingExists) {
+            throw new ServiceException(E05004);
+        }
+    }
+
+    private void validateSlotStatus(Slot slot) {
+        if (SlotStatus.AVAILABLE != slot.getStatus()) {
+            throw new ServiceException(E05004);
+        }
+    }
+
+    private void validateSlotOwner(Slot slot) {
+        if (slot.getMechanic().getUuid().equals(getLoggedUserUUID())) {
+            throw new ServiceException(E06004);
+        }
+    }
+
+    private static Booking buildBooking(Slot slot) {
+        return Booking.builder()
+                      .uuid(randomUUID())
+                      .status(BookingStatus.CONFIRMED)
+                      .slot(slot)
+                      .client(getLoggedUser())
+                      .build();
+    }
+
     private Booking getBookingWithClientAndSlotOrElseThrow(UUID bookingUuid) {
         return bookingRepository.findBookingWithClientAndSlotByUuid(bookingUuid)
                                 .orElseThrow(() -> {
@@ -139,10 +149,21 @@ public class BookingServiceImpl implements BookingService {
                                 });
     }
 
+    private void validateBooking(Booking booking) {
+        validateBookingOwner(SecurityUtils.getLoggedUserUUID(), booking.getClient().getUuid(), booking.getUuid());
+        validateBookingStatus(booking);
+    }
+
     private void validateBookingOwner(UUID loggedUserUuid, UUID bookingOwnerUuid, UUID bookingUuid) {
         if (!loggedUserUuid.equals(bookingOwnerUuid)) {
             log.error("Logged in user is not the owner of the booking. Booking UUID: [{}], Logged user UUID: [{}], Booking owner UUID: [{}]", bookingUuid, loggedUserUuid, bookingOwnerUuid);
             throw new ServiceException(E06003);
+        }
+    }
+
+    private void validateBookingStatus(Booking booking) {
+        if (BookingStatus.CONFIRMED != booking.getStatus()) {
+            throw new ServiceException(E06001);
         }
     }
 }
