@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import pl.rezerveo.booking.booking.dto.response.BookingListResponse;
+import pl.rezerveo.booking.booking.dto.response.MechanicBookingListResponse;
 import pl.rezerveo.booking.booking.enumerated.BookingStatus;
 import pl.rezerveo.booking.booking.model.Booking;
 
@@ -51,4 +52,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                   AND b.slot.endTime <= :time
             """)
     List<Booking> findAllByStatusAndSlotEndTimeBefore(BookingStatus status, LocalDate date, LocalTime time);
+
+    @Query("""
+            SELECT new pl.rezerveo.booking.booking.dto.response.MechanicBookingListResponse(
+                   b.uuid,
+                   s.uuid,
+                   s.date,
+                   s.startTime,
+                   s.endTime,
+                   s.serviceType,
+                   m.firstName,
+                   m.lastName,
+                   b.status
+            )
+            FROM Booking b
+                    JOIN b.slot s
+                    JOIN s.mechanic m
+            WHERE m.uuid = :mechanicUuid
+            """)
+    Page<MechanicBookingListResponse> findAllBySlotMechanicUuid(UUID mechanicUuid, Pageable pageable);
 }

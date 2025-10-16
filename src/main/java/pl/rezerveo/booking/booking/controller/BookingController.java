@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.rezerveo.booking.booking.dto.response.AvailableSlotsResponse;
 import pl.rezerveo.booking.booking.dto.response.BookingListResponse;
+import pl.rezerveo.booking.booking.dto.response.MechanicBookingListResponse;
 import pl.rezerveo.booking.booking.service.BookingService;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
@@ -20,6 +22,7 @@ import pl.rezerveo.booking.openApi.booking.ApiBookSlotResponse;
 import pl.rezerveo.booking.openApi.booking.ApiCancelBookingResponse;
 import pl.rezerveo.booking.openApi.booking.ApiGetAvailableSlotsResponse;
 import pl.rezerveo.booking.openApi.booking.ApiGetBookingListResponse;
+import pl.rezerveo.booking.openApi.booking.ApiGetMechanicBookingHistoryResponse;
 
 import java.util.UUID;
 
@@ -57,5 +60,12 @@ public class BookingController {
     @ApiCancelBookingResponse
     public BaseResponse cancelBooking(@PathVariable UUID bookingUuid) {
         return bookingService.cancelBooking(bookingUuid);
+    }
+
+    @GetMapping("/mechanic/history")
+    @PreAuthorize("hasRole('MECHANIC')")
+    @ApiGetMechanicBookingHistoryResponse
+    public PageResponse<MechanicBookingListResponse> getMechanicBookingHistory(@PageableDefault(sort = "createdDate", direction = DESC) Pageable pageable) {
+        return bookingService.getMechanicBookingHistory(pageable);
     }
 }

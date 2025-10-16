@@ -3,6 +3,7 @@ package pl.rezerveo.booking.booking.service;
 import org.springframework.data.domain.Pageable;
 import pl.rezerveo.booking.booking.dto.response.AvailableSlotsResponse;
 import pl.rezerveo.booking.booking.dto.response.BookingListResponse;
+import pl.rezerveo.booking.booking.dto.response.MechanicBookingListResponse;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 
@@ -17,4 +18,8 @@ public interface BookingService {
     PageResponse<BookingListResponse> getBookingList(Pageable pageable);
 
     BaseResponse cancelBooking(UUID bookingUuid);
+
+    BaseResponse cancelBookingByMechanic(UUID slotUuid, UUID bookingUuid);
+
+    PageResponse<MechanicBookingListResponse> getMechanicBookingHistory(Pageable pageable);
 }

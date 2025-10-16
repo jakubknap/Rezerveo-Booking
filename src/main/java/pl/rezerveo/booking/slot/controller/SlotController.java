@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pl.rezerveo.booking.booking.service.BookingService;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
+import pl.rezerveo.booking.openApi.slot.ApiCancelBookingByMechanicResponse;
 import pl.rezerveo.booking.openApi.slot.ApiCancelSlotResponse;
 import pl.rezerveo.booking.openApi.slot.ApiCreateSlotResponse;
 import pl.rezerveo.booking.openApi.slot.ApiGetMechanicSlotsResponse;
@@ -35,6 +37,7 @@ import static pl.rezerveo.booking.common.constant.Urls.SLOTS_URL;
 public class SlotController {
 
     private final SlotService slotService;
+    private final BookingService bookingService;
 
     @PostMapping
     @ApiCreateSlotResponse
@@ -52,5 +55,11 @@ public class SlotController {
     @ApiCancelSlotResponse
     public BaseResponse cancelSlot(@PathVariable UUID slotUuid) {
         return slotService.cancelSlot(slotUuid);
+    }
+
+    @DeleteMapping("/{slotUuid}/bookings/{bookingUuid}")
+    @ApiCancelBookingByMechanicResponse
+    public BaseResponse cancelBooking(@PathVariable UUID slotUuid, @PathVariable UUID bookingUuid) {
+        return bookingService.cancelBookingByMechanic(slotUuid, bookingUuid);
     }
 }

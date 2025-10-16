@@ -6,6 +6,7 @@ import pl.rezerveo.booking.booking.enumerated.BookingStatus
 import pl.rezerveo.booking.booking.model.Booking
 import pl.rezerveo.booking.booking.repository.BookingRepository
 import pl.rezerveo.booking.booking.service.impl.BookingServiceImpl
+import pl.rezerveo.booking.exception.dto.response.BaseResponse
 import pl.rezerveo.booking.exception.exception.ServiceException
 import pl.rezerveo.booking.slot.enumerate.SlotStatus
 import pl.rezerveo.booking.slot.model.Slot
@@ -15,6 +16,7 @@ import spock.lang.Specification
 
 import static java.util.UUID.randomUUID
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05001
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05002
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E05004
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06000
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E06001
@@ -165,5 +167,130 @@ class BookingServiceTest extends Specification {
         0 * slotRepository.save(_)
         def ex = thrown(ServiceException)
         ex.status == E06001
+    }
+
+    def "should cancel confirmed booking by mechanic"() {
+        given:
+        def clientUuid = randomUUID()
+        def bookingUuid = randomUUID()
+        def slotUuid = randomUUID()
+
+        def slot = new Slot(uuid: slotUuid, status: BOOKED, mechanic: user)
+        def booking = new Booking(uuid: bookingUuid, status: BookingStatus.CONFIRMED, slot: slot, client: new User(uuid: clientUuid))
+        slot.bookings = [booking]
+
+        slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid) >> Optional.of(slot)
+
+        when:
+        def response = bookingService.cancelBookingByMechanic(slot.getUuid(), bookingUuid)
+
+        then:
+        1 * bookingRepository.save(_ as Booking)
+        1 * slotRepository.save(_ as Slot)
+        response instanceof BaseResponse
+        response.status == S00001
+        booking.status == BookingStatus.CANCELED
+        slot.status == SlotStatus.AVAILABLE
+    }
+
+    def "should throw exception when slot not found"() {
+        given:
+        slotRepository.findSlotWithMechanicAndBookingByUuid(_ as UUID) >> Optional.empty()
+
+        when:
+        bookingService.cancelBookingByMechanic(randomUUID(), randomUUID())
+
+        then:
+        0 * bookingRepository.save(_)
+        0 * slotRepository.save(_)
+        def ex = thrown(ServiceException)
+        ex.status == E05001
+    }
+
+    def "should throw exception when mechanic not slot owner"() {
+        given:
+        def clientUuid = randomUUID()
+        def bookingUuid = randomUUID()
+        def slotUuid = randomUUID()
+
+        def slot = new Slot(uuid: slotUuid, status: BOOKED, mechanic: new User(uuid: randomUUID()))
+        def booking = new Booking(uuid: bookingUuid, status: BookingStatus.CONFIRMED, slot: slot, client: new User(uuid: clientUuid))
+        slot.bookings = [booking]
+
+        slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid) >> Optional.of(slot)
+
+        when:
+        bookingService.cancelBookingByMechanic(slotUuid, bookingUuid)
+
+        then:
+        0 * bookingRepository.save(_)
+        0 * slotRepository.save(_)
+        def ex = thrown(ServiceException)
+        ex.status == E05002
+    }
+
+    def "should throw exception when booking not found in slot"() {
+        given:
+        def bookingUuid = randomUUID()
+        def slotUuid = randomUUID()
+
+        def slot = new Slot(uuid: slotUuid, status: BOOKED, mechanic: user, bookings: [])
+
+        slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid) >> Optional.of(slot)
+
+        when:
+        bookingService.cancelBookingByMechanic(slotUuid, bookingUuid)
+
+        then:
+        def ex = thrown(ServiceException)
+        ex.status == E06000
+        0 * bookingRepository.save(_)
+        0 * slotRepository.save(_)
+    }
+
+    def "should throw exception when booking status is not CONFIRMED"() {
+        given:
+        def clientUuid = randomUUID()
+        def bookingUuid = randomUUID()
+        def slotUuid = randomUUID()
+
+        def slot = new Slot(uuid: slotUuid, status: BOOKED, mechanic: user)
+        def booking = new Booking(uuid: bookingUuid, status: BookingStatus.CANCELED, slot: slot, client: new User(uuid: clientUuid))
+        slot.bookings = [booking]
+
+        slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid) >> Optional.of(slot)
+
+        when:
+        bookingService.cancelBookingByMechanic(slotUuid, bookingUuid)
+
+        then:
+        def ex = thrown(ServiceException)
+        ex.status == E06001
+        0 * bookingRepository.save(_)
+        0 * slotRepository.save(_)
+    }
+
+    def "should not set slot available if other confirmed bookings exist"() {
+        given:
+        def clientUuid = randomUUID()
+        def bookingUuid = randomUUID()
+        def slotUuid = randomUUID()
+
+        def slot = new Slot(uuid: slotUuid, status: BOOKED, mechanic: user)
+        def booking = new Booking(uuid: bookingUuid, status: BookingStatus.CONFIRMED, slot: slot, client: new User(uuid: clientUuid))
+        def otherBooking = new Booking(uuid: randomUUID(), status: BookingStatus.CONFIRMED, slot: slot, client: new User(uuid: randomUUID()))
+        slot.bookings = [booking, otherBooking]
+
+        slotRepository.findSlotWithMechanicAndBookingByUuid(slotUuid) >> Optional.of(slot)
+
+        when:
+        def response = bookingService.cancelBookingByMechanic(slotUuid, bookingUuid)
+
+        then:
+        1 * bookingRepository.save(_)
+        0 * slotRepository.save(_)
+        booking.status == BookingStatus.CANCELED
+        slot.status == BOOKED
+        response.status == S00001
     }
 }

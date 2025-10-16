@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
@@ -19,7 +20,11 @@ import pl.rezerveo.booking.exception.exception.ServiceException;
 
 import java.util.List;
 
-import static pl.rezerveo.booking.common.enumerated.ResponseCode.*;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00000;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00001;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00004;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00005;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00006;
 import static pl.rezerveo.booking.exception.mapper.BaseValidationErrorMapper.mapBindingResult;
 import static pl.rezerveo.booking.exception.mapper.BaseValidationErrorMapper.mapCustomValidationErrors;
 
@@ -78,6 +83,12 @@ public class BaseControllerAdvice {
         List<BaseApiValidationError> errors = mapCustomValidationErrors(ex.getErrors());
         BaseValidationResponse<List<BaseApiValidationError>> validationResponse = new BaseValidationResponse<>(E00000, errors);
         return validationResponse.get();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<BaseResponse> handleException(AccessDeniedException ex) {
+        log.error("AccessDeniedException error: {}", ex.getMessage(), ex);
+        return new BaseResponse(E00001).get();
     }
 
     @ExceptionHandler(ServiceException.class)
