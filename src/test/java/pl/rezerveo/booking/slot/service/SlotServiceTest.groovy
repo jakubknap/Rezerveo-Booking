@@ -6,6 +6,7 @@ import pl.rezerveo.booking.booking.enumerated.BookingStatus
 import pl.rezerveo.booking.booking.model.Booking
 import pl.rezerveo.booking.booking.repository.BookingRepository
 import pl.rezerveo.booking.exception.exception.ServiceException
+import pl.rezerveo.booking.notification.NotificationPublisher
 import pl.rezerveo.booking.slot.dto.request.CreateSlotRequest
 import pl.rezerveo.booking.slot.model.Slot
 import pl.rezerveo.booking.slot.repository.SlotRepository
@@ -33,8 +34,9 @@ class SlotServiceTest extends Specification {
 
     SlotRepository slotRepository = Mock(SlotRepository)
     BookingRepository bookingRepository = Mock(BookingRepository)
+    NotificationPublisher notificationPublisher = Mock(NotificationPublisher)
 
-    SlotService slotService = new SlotServiceImpl(slotRepository, bookingRepository)
+    SlotService slotService = new SlotServiceImpl(slotRepository, bookingRepository, notificationPublisher)
 
     def user = new User(uuid: randomUUID(), email: "user@example.com", password: "encoded-pass")
 

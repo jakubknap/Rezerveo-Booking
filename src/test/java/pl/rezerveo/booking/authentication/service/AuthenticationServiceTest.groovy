@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication
 import pl.rezerveo.booking.authentication.dto.request.LoginRequest
 import pl.rezerveo.booking.authentication.dto.request.RegisterRequest
 import pl.rezerveo.booking.authentication.service.impl.AuthenticationServiceImpl
+import pl.rezerveo.booking.event.service.RabbitEventPublisher
 import pl.rezerveo.booking.exception.dto.response.BaseResponse
 import pl.rezerveo.booking.exception.exception.ServiceException
 import pl.rezerveo.booking.security.JwtService
@@ -43,9 +44,10 @@ class AuthenticationServiceTest extends Specification {
     def authenticationManager = Mock(AuthenticationManager)
     def tokenServiceFactory = Mock(TokenServiceFactory)
     def encryptionService = Mock(EncryptionService)
+    def eventPublisher = Mock(RabbitEventPublisher)
 
     def authService = new AuthenticationServiceImpl(userRepository, userMapper, userService, jwtService, tokenRepository, authenticationManager,
-            tokenServiceFactory, encryptionService)
+            tokenServiceFactory, encryptionService, eventPublisher)
 
     def "register should throw exception if user exists"() {
         given:

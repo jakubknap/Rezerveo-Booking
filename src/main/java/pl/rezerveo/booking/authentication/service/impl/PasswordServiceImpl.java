@@ -7,10 +7,13 @@ import org.springframework.stereotype.Service;
 import pl.rezerveo.booking.authentication.dto.request.ConfirmResetPasswordRequest;
 import pl.rezerveo.booking.authentication.dto.request.ResetPasswordRequest;
 import pl.rezerveo.booking.authentication.service.PasswordService;
+import pl.rezerveo.booking.event.MailEvent;
+import pl.rezerveo.booking.event.service.RabbitEventPublisher;
 import pl.rezerveo.booking.exception.dto.BaseApiValidationError;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.CustomValidationException;
 import pl.rezerveo.booking.exception.exception.ServiceException;
+import pl.rezerveo.booking.security.encryption.EncryptionService;
 import pl.rezerveo.booking.token.model.Token;
 import pl.rezerveo.booking.token.repository.TokenRepository;
 import pl.rezerveo.booking.token.service.TokenService;
@@ -24,6 +27,7 @@ import java.util.List;
 
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00000;
 import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00000;
+import static pl.rezerveo.booking.event.MailType.PASSWORD_RESET;
 import static pl.rezerveo.booking.token.enumerated.TokenType.PASSWORD_RESET_TOKEN;
 import static pl.rezerveo.booking.util.MaskingUtil.maskEmail;
 import static pl.rezerveo.booking.util.StringUtil.notEquals;
@@ -38,6 +42,8 @@ public class PasswordServiceImpl implements PasswordService {
     private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final RabbitEventPublisher eventPublisher;
+    private final EncryptionService encryptionService;
 
     @Override
     public BaseResponse resetPasswordRequest(ResetPasswordRequest request) {
@@ -74,8 +80,7 @@ public class PasswordServiceImpl implements PasswordService {
         tokenService.revokeAllUserTokensByType(user.getUuid());
 
         String passwordResetToken = tokenService.generateToken(user);
-
-//    TODO
+        eventPublisher.sendMailEvent(new MailEvent(user.getEmail(), user.getFirstName(), user.getLastName(), passwordResetToken, PASSWORD_RESET, encryptionService));
     }
 
     private void validateResetPasswordRequest(String password, String passwordRepeat, User user) {

@@ -3,7 +3,13 @@ package pl.rezerveo.booking.authentication.service.impl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +17,8 @@ import pl.rezerveo.booking.authentication.dto.request.LoginRequest;
 import pl.rezerveo.booking.authentication.dto.request.RegisterRequest;
 import pl.rezerveo.booking.authentication.dto.response.AuthenticationResponse;
 import pl.rezerveo.booking.authentication.service.AuthenticationService;
+import pl.rezerveo.booking.event.MailEvent;
+import pl.rezerveo.booking.event.service.RabbitEventPublisher;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.ServiceException;
 import pl.rezerveo.booking.security.JwtService;
@@ -29,8 +37,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static pl.rezerveo.booking.common.enumerated.ResponseCode.*;
-import static pl.rezerveo.booking.token.enumerated.TokenType.*;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E00006;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E02000;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E02001;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E02002;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E02003;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E02004;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E03000;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E03001;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E03002;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.E03003;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00000;
+import static pl.rezerveo.booking.common.enumerated.ResponseCode.S00003;
+import static pl.rezerveo.booking.event.MailType.ACCOUNT_ACTIVATION;
+import static pl.rezerveo.booking.token.enumerated.TokenType.ACCESS_TOKEN;
+import static pl.rezerveo.booking.token.enumerated.TokenType.ACCOUNT_ACTIVATION_TOKEN;
+import static pl.rezerveo.booking.token.enumerated.TokenType.REFRESH_TOKEN;
 import static pl.rezerveo.booking.user.enumerated.UserStatus.ACTIVE;
 import static pl.rezerveo.booking.user.enumerated.UserStatus.REGISTERED;
 
@@ -47,6 +69,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final TokenServiceFactory tokenServiceFactory;
     private final EncryptionService encryptionService;
+    private final RabbitEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -109,8 +132,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private void sendActivationLink(User user) {
         String activationToken = tokenServiceFactory.getTokenService(ACCOUNT_ACTIVATION_TOKEN)
-                .generateToken(user);
-//    TODO
+                                                    .generateToken(user);
+        eventPublisher.sendMailEvent(new MailEvent(user.getEmail(), user.getFirstName(), user.getLastName(), activationToken, ACCOUNT_ACTIVATION, encryptionService));
     }
 
     private void activateUser(Token tokenEntity) {

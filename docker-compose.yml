@@ -1,0 +1,43 @@
+services:
+  postgres:
+    container_name: rezerveo_postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rezerveo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - rezerveo
+    restart: unless-stopped
+  mail-dev:
+    container_name: rezerveo_mail_dev
+    image: maildev/maildev
+    ports:
+      - "1080:1080"  # web UI
+      - "1025:1025"  # smtp
+
+  rabbitmq:
+    image: rabbitmq:4.1.4-management
+    container_name: rezerveo_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # management UI
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+
+networks:
+  rezerveo:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local
+  rabbitmqdata:
+    driver: local

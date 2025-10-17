@@ -4,9 +4,11 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import pl.rezerveo.booking.authentication.dto.request.ConfirmResetPasswordRequest
 import pl.rezerveo.booking.authentication.dto.request.ResetPasswordRequest
 import pl.rezerveo.booking.authentication.service.impl.PasswordServiceImpl
+import pl.rezerveo.booking.event.service.RabbitEventPublisher
 import pl.rezerveo.booking.exception.dto.response.BaseResponse
 import pl.rezerveo.booking.exception.exception.CustomValidationException
 import pl.rezerveo.booking.exception.exception.ServiceException
+import pl.rezerveo.booking.security.encryption.EncryptionService
 import pl.rezerveo.booking.token.model.Token
 import pl.rezerveo.booking.token.repository.TokenRepository
 import pl.rezerveo.booking.token.service.TokenService
@@ -28,8 +30,10 @@ class PasswordServiceTest extends Specification {
     def tokenRepository = Mock(TokenRepository)
     def passwordEncoder = Mock(PasswordEncoder)
     def userRepository = Mock(UserRepository)
+    def eventPublisher = Mock(RabbitEventPublisher)
+    def encryptionService = Mock(EncryptionService)
 
-    def passwordService = new PasswordServiceImpl(userService, tokenServiceFactory, tokenRepository, passwordEncoder, userRepository)
+    def passwordService = new PasswordServiceImpl(userService, tokenServiceFactory, tokenRepository, passwordEncoder, userRepository, eventPublisher, encryptionService)
 
     def "resetPasswordRequest should return generic response if user not found"() {
         given:

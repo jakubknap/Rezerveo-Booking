@@ -16,6 +16,7 @@ import pl.rezerveo.booking.booking.service.BookingService;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.ServiceException;
+import pl.rezerveo.booking.notification.NotificationPublisher;
 import pl.rezerveo.booking.security.util.SecurityUtils;
 import pl.rezerveo.booking.slot.enumerate.SlotStatus;
 import pl.rezerveo.booking.slot.model.Slot;
@@ -43,6 +44,7 @@ public class BookingServiceImpl implements BookingService {
 
     private final SlotRepository slotRepository;
     private final BookingRepository bookingRepository;
+    private final NotificationPublisher notificationPublisher;
 
     @Override
     public PageResponse<AvailableSlotsResponse> getAvailableSlots(Pageable pageable) {
@@ -68,7 +70,8 @@ public class BookingServiceImpl implements BookingService {
         bookingRepository.save(booking);
         slotRepository.save(slot);
 
-        //TODO notyfikacja
+        notificationPublisher.notifyBookingConfirmedToMechanic(booking.getClient(), slot);
+        notificationPublisher.notifyBookingConfirmedToClient(booking.getClient(), slot);
 
         log.info("Slot booked successfully, slot UUID: {}, booking UUID: {}", slot.getUuid(), booking.getUuid());
         return new BaseResponse(S00000);
@@ -96,6 +99,7 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.CANCELED);
         bookingRepository.save(booking);
+        notificationPublisher.notifyBookingCanceledByClientToMechanic(booking.getClient(), booking.getSlot());
 
         Slot slot = booking.getSlot();
 
@@ -112,7 +116,6 @@ public class BookingServiceImpl implements BookingService {
             log.info("Slot remains BOOKED as there are other confirmed bookings, slot UUID: {}", slot.getUuid());
         }
 
-        //TODO notyfikacja
         log.info("Booking canceled, booking UUID: {}", booking.getUuid());
         return new BaseResponse(S00001);
     }
@@ -133,7 +136,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setStatus(BookingStatus.CANCELED);
         bookingRepository.save(booking);
         log.info("Booking [{}] canceled by mechanic", bookingUuid);
-        //TOOD info
+        notificationPublisher.notifyBookingCanceledByMechanicToClient(booking.getClient(), slot);
 
         boolean stillBooked = slot.getBookings()
                                   .stream()
@@ -143,7 +146,6 @@ public class BookingServiceImpl implements BookingService {
             slot.setStatus(SlotStatus.AVAILABLE);
             slotRepository.save(slot);
             log.info("Slot set to AVAILABLE as no other confirmed bookings exist, slot UUID: {}", slot.getUuid());
-            //TODO info
         }
         else {
             log.info("Slot remains BOOKED as there are other confirmed bookings, slot UUID: {}", slot.getUuid());

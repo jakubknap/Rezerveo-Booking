@@ -12,6 +12,7 @@ import pl.rezerveo.booking.booking.repository.BookingRepository;
 import pl.rezerveo.booking.common.dto.PageResponse;
 import pl.rezerveo.booking.exception.dto.response.BaseResponse;
 import pl.rezerveo.booking.exception.exception.ServiceException;
+import pl.rezerveo.booking.notification.NotificationPublisher;
 import pl.rezerveo.booking.slot.dto.request.CreateSlotRequest;
 import pl.rezerveo.booking.slot.dto.response.MechanicSlotsResponse;
 import pl.rezerveo.booking.slot.enumerate.SlotStatus;
@@ -41,6 +42,7 @@ public class SlotServiceImpl implements SlotService {
 
     private final SlotRepository slotRepository;
     private final BookingRepository bookingRepository;
+    private final NotificationPublisher notificationPublisher;
 
     @Override
     public BaseResponse createSlot(CreateSlotRequest request) {
@@ -84,7 +86,7 @@ public class SlotServiceImpl implements SlotService {
                     .forEach(b -> {
                         log.info("Canceling booking UUID: {}", b.getUuid());
                         b.setStatus(BookingStatus.CANCELED);
-                        // TODO: powiadomienie do klienta
+                        notificationPublisher.notifySlotCanceledToClients(b);
                     });
             bookingRepository.saveAll(bookings);
         }
