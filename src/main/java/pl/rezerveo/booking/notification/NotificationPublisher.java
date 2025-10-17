@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pl.rezerveo.booking.booking.model.Booking;
 import pl.rezerveo.booking.event.BookingEvent;
 import pl.rezerveo.booking.event.service.RabbitEventPublisher;
+import pl.rezerveo.booking.security.encryption.EncryptionService;
 import pl.rezerveo.booking.slot.model.Slot;
 import pl.rezerveo.booking.user.model.User;
 
@@ -13,12 +14,14 @@ import pl.rezerveo.booking.user.model.User;
 public class NotificationPublisher {
 
     private final RabbitEventPublisher eventPublisher;
+    private final EncryptionService encryptionService;
 
     public void notifyBookingConfirmedToClient(User client, Slot slot) {
         BookingEvent event = new BookingEvent(client.getEmail(),
                                               "Rezerwacja potwierdzona",
                                               "Twoja rezerwacja na slot " + slot.getDate() + " od " + slot.getStartTime() + " do " + slot.getEndTime() +
-                                              " została pomyślnie utworzona.");
+                                              " została pomyślnie utworzona.",
+                                              encryptionService);
         eventPublisher.sendBookingEvent(event);
     }
 
@@ -26,7 +29,8 @@ public class NotificationPublisher {
         BookingEvent event = new BookingEvent(slot.getMechanic().getEmail(),
                                               "Nowa rezerwacja na Twój slot",
                                               "Klient " + client.getFirstName() + " " + client.getLastName() + " zarezerwował Twój slot " + slot.getDate() + " od " +
-                                              slot.getStartTime() + " do " + slot.getEndTime() + ".");
+                                              slot.getStartTime() + " do " + slot.getEndTime() + ".",
+                                              encryptionService);
         eventPublisher.sendBookingEvent(event);
     }
 
@@ -34,7 +38,8 @@ public class NotificationPublisher {
         BookingEvent event = new BookingEvent(slot.getMechanic().getEmail(),
                                               "Rezerwacja anulowana przez klienta",
                                               "Klient " + client.getFirstName() + " " + client.getLastName() + " anulował swoją rezerwację na Twój slot " + slot.getDate() +
-                                              " od " + slot.getStartTime() + " do " + slot.getEndTime() + ".");
+                                              " od " + slot.getStartTime() + " do " + slot.getEndTime() + ".",
+                                              encryptionService);
         eventPublisher.sendBookingEvent(event);
     }
 
@@ -42,7 +47,8 @@ public class NotificationPublisher {
         BookingEvent event = new BookingEvent(client.getEmail(),
                                               "Rezerwacja anulowana przez mechanika",
                                               "Twój slot " + slot.getDate() + " od " + slot.getStartTime() + " do " + slot.getEndTime() + " został anulowany przez mechanika " +
-                                              slot.getMechanic().getFirstName() + " " + slot.getMechanic().getLastName() + ".");
+                                              slot.getMechanic().getFirstName() + " " + slot.getMechanic().getLastName() + ".",
+                                              encryptionService);
         eventPublisher.sendBookingEvent(event);
     }
 
@@ -51,7 +57,8 @@ public class NotificationPublisher {
                                               "Slot anulowany przez mechanika",
                                               "Mechanik " + booking.getSlot().getMechanic().getFirstName() + " " +
                                               booking.getSlot().getMechanic().getLastName() + " anulował slot dnia " + booking.getSlot().getDate() + " od " +
-                                              booking.getSlot().getStartTime() + " do " + booking.getSlot().getEndTime() + ". Twoja rezerwacja została anulowana.");
+                                              booking.getSlot().getStartTime() + " do " + booking.getSlot().getEndTime() + ". Twoja rezerwacja została anulowana.",
+                                              encryptionService);
         eventPublisher.sendBookingEvent(event);
     }
 }
